@@ -17,12 +17,16 @@ func Parse(filename string) {
 		panic(err)
 	}
 
-	reg := regexp.MustCompile(`{{_ \.(\w+)}}`)
+	reg := regexp.MustCompile(`{{_ \.(\w+)( \w+)?}}`)
 	allSub := reg.FindAllSubmatch(b, -1)
 	for _, sub := range allSub {
 		rawValue := sub[0]
 		env := string(sub[1])
+		envValueDefault := bytes.Trim(sub[2], " ")
 		envValue := []byte(os.Getenv(env))
+		if len(envValueDefault) != 0 {
+			envValue = envValueDefault
+		}
 		b = bytes.Replace(b, rawValue, envValue, 1)
 	}
 

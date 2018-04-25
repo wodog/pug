@@ -1,6 +1,7 @@
 package pug_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -14,6 +15,12 @@ func Test(t *testing.T) {
 	hello := pug.GetString("HELLO")
 	if hello != "world" {
 		t.Error("GetString")
+	}
+
+	ddd := pug.GetString("default")
+	fmt.Println(ddd)
+	if ddd != "ddd" {
+		t.Error("GetStringDefault")
 	}
 
 	num := pug.GetInt("num")
