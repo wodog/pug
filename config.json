@@ -1,6 +1,0 @@
-{
-  "HELLO": "{{_ .HELLO}}",
-  "default": "{{_ .default ddd}}",
-  "num": 123456,
-  "array": ["a", "b", "c", "d"]
-}

@@ -1,35 +1,46 @@
 package pug_test
 
 import (
-	"fmt"
-	"os"
 	"testing"
 
 	"github.com/wodog/pug"
 )
 
-func Test(t *testing.T) {
-	os.Setenv("HELLO", "world")
-	pug.Parse("config.json")
+var config = `{
+	"PORT": 8080,
+	"MONGO": "{{_ .MONGO localhost:27017/dc-server}}",
+	"TRACKER": "{{_ .TRACKER}}"
+	}`
+var configResult = `{
+	"PORT": 8080,
+	"MONGO": "localhost:27017/dc-server",
+	"TRACKER": ""
+	}`
 
-	hello := pug.GetString("HELLO")
-	if hello != "world" {
-		t.Error("GetString")
+func init() {
+	pug.ParseString(config)
+}
+
+func TestGetInt(t *testing.T) {
+	if pug.GetInt("PORT") != 8080 {
+		t.Fail()
 	}
+}
 
-	ddd := pug.GetString("default")
-	fmt.Println(ddd)
-	if ddd != "ddd" {
-		t.Error("GetStringDefault")
+func TestGetNil(t *testing.T) {
+	if pug.GetString("TRACKER") != "" {
+		t.Fail()
 	}
+}
 
-	num := pug.GetInt("num")
-	if num != 123456 {
-		t.Error("GetInt")
+func TestGetDefault(t *testing.T) {
+	if pug.GetString("MONGO") != "localhost:27017/dc-server" {
+		t.Fail()
 	}
+}
 
-	array := pug.GetStringSlice("array")
-	if len(array) != 4 {
-		t.Error("GetStringSlice")
+func TestString(t *testing.T) {
+	if pug.String() != configResult {
+		t.Fail()
 	}
 }

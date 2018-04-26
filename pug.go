@@ -2,58 +2,78 @@ package pug
 
 import (
 	"bytes"
-	"encoding/json"
+	"io"
 	"io/ioutil"
 	"os"
 	"regexp"
+	"strings"
+
+	"github.com/tidwall/gjson"
 )
 
-var config map[string]interface{}
+type pug struct {
+	gjson.Result
+	b []byte
+}
 
-// Parse parse a file
-func Parse(filename string) {
+var p *pug
+
+// Parse parse from reader
+func Parse(r io.Reader) {
+	b, err := ioutil.ReadAll(r)
+	if err != nil {
+		panic(err)
+	}
+
+	b = Format(b)
+	p = &pug{
+		gjson.ParseBytes(b),
+		b,
+	}
+}
+
+// ParseString parse from string
+func ParseString(s string) {
+	Parse(strings.NewReader(s))
+}
+
+// ParseFile parse from file
+func ParseFile(filename string) {
 	b, err := ioutil.ReadFile(filename)
 	if err != nil {
 		panic(err)
 	}
+	Parse(bytes.NewReader(b))
+}
 
-	reg := regexp.MustCompile(`{{_ \.(\w+)( \w+)?}}`)
+// Format format b
+func Format(b []byte) []byte {
+	reg := regexp.MustCompile(`{{_ \.(\w+)( [a-zA-Z0-9\:/\-_.]+)?}}`)
 	allSub := reg.FindAllSubmatch(b, -1)
 	for _, sub := range allSub {
 		rawValue := sub[0]
 		env := string(sub[1])
-		envValueDefault := bytes.Trim(sub[2], " ")
 		envValue := []byte(os.Getenv(env))
-		if len(envValueDefault) != 0 {
+		envValueDefault := bytes.Trim(sub[2], " ")
+		if len(envValue) == 0 {
 			envValue = envValueDefault
 		}
 		b = bytes.Replace(b, rawValue, envValue, 1)
 	}
-
-	err = json.Unmarshal(b, &config)
-	if err != nil {
-		panic(err)
-	}
+	return b
 }
 
 // GetString get string value
 func GetString(s string) string {
-	v := config[s].(string)
-	return v
+	return p.Get(s).String()
 }
 
 // GetInt get int value
-func GetInt(s string) int {
-	v := (config[s].(float64))
-	return int(v)
+func GetInt(s string) int64 {
+	return p.Get(s).Int()
 }
 
-// GetStringSlice get stringslice value
-func GetStringSlice(s string) []string {
-	var ss []string
-	vs := config[s].([]interface{})
-	for _, v := range vs {
-		ss = append(ss, v.(string))
-	}
-	return ss
+// String return raw data
+func String() string {
+	return string(p.b)
 }
